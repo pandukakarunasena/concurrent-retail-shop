@@ -1,36 +1,48 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.stream.Collectors;
 
 public class SystemAdmin implements Runnable{
 
     private Store store;
 
+    private volatile boolean stopFlag;
+
     public SystemAdmin(Store store) {
 
         this.store = store;
     }
+
+    public void stop() {
+        stopFlag = true;
+    }
     @Override
     public void run() {
-        System.out.println(Thread.currentThread().getName() +" started");
-        List<Product> productsList = new ArrayList<Product>();
 
-        for (Map.Entry<String, Product> entry : store.getProducts().entrySet()) {
-            Product product = entry.getValue();
-            productsList.add(product);
-        }
-        System.out.println(Thread.currentThread().getName() +" product list generated");
         //when get notified as any of the products are low lets say finish or last two fill the quantity
         //add products to a queue that needs to be refilled if products are in the queue refill it.
-        while (true) {
+        ConcurrentLinkedDeque<Product> restockNeedProducts = store.getRestockNeedProducts();
+        while(!stopFlag) {
+            System.out.println(Thread.currentThread().getName() + " checking if any restocks are needed " + String.join(" ", restockNeedProducts.stream().map(Object::toString).collect(Collectors.joining(", "))));
 
-            System.out.println(Thread.currentThread().getName() +" monitoring restock operation");
-            for (Product product: productsList) {
-                System.out.println(Thread.currentThread().getName() +" monitoring restock operation for " + product.getName());
-                product.restock(5);
-                System.out.println(Thread.currentThread().getName() +" is in : " + Thread.currentThread().getState());
+            synchronized (restockNeedProducts) {
+                while (!restockNeedProducts.isEmpty()) {
+                    System.out.println(Thread.currentThread().getName() + " restocks needed for " + String.join(" ", restockNeedProducts.stream().map(Object::toString).toArray(String[]::new)));
+                    for (Product product: restockNeedProducts) {
+                        product.restock(1, restockNeedProducts);
+                    }
+                }
             }
+            //listen for 1000 and if no restock is reported stop admin threads from monitoring. This better replace with a pub sub model
+            //so admins get notified when a product needs to be restocked.
+//            try {
+//                Thread.sleep(3000);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//
+//            if (restockNeedProducts.isEmpty()) {
+//                break;
+//            }
         }
     }
 }
