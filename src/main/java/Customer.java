@@ -1,15 +1,18 @@
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Customer implements Runnable{
 
     private Cart cart;
     private Store store;
+    private List<ShoppingItem> shoppingList;
 
-    public Customer(Cart cart, Store store) {
+    public Customer(Cart cart, Store store, List<ShoppingItem> shoppingList) {
 
         this.cart = cart;
         this.store = store;
+        this.shoppingList = shoppingList;
     }
 
     public Cart getCart() {
@@ -20,35 +23,37 @@ public class Customer implements Runnable{
     @Override
     public void run() {
 
-        System.out.println(Thread.currentThread().getName() +" started");
-        System.out.println(Thread.currentThread().getName() +" creating shopping list");
-        List<ShoppingItem> shoppingList = new ArrayList();
-        shoppingList.add(new ShoppingItem("apple", 10));
-//        shoppingList.add(new ShoppingItem("banana", 5));
-        System.out.println(Thread.currentThread().getName() +" shopping list created");
+        System.out.println(Thread.currentThread().getName() +" started shopping....");
 
-        for (ShoppingItem item: shoppingList) {
-            Product product = store.getProduct(item.getName());
-
-            if ( product != null ) {
-                product.purchase(item.getQuantity());
-            } else {
-                System.out.println(product.getName() + " is not available.");
+        while(!shoppingList.isEmpty()) {
+            System.out.println(Thread.currentThread().getName() + " has " + shoppingList.stream().map(ShoppingItem::getName).collect(Collectors.joining(", ")) + " to buy.");
+            Iterator<ShoppingItem> iterator = shoppingList.iterator();
+            while (iterator.hasNext()) {
+                ShoppingItem item = iterator.next();
+                System.out.println(Thread.currentThread().getName() + " checking for " + item.getQuantity() + " " + item.getName() + " to buy.");
+                Product product = store.getProduct(item.getName());
+                if (product != null) {
+                    System.out.println(Thread.currentThread().getName() + " found " + item.getName());
+                    boolean canPurchase = product.canPurchase(item.getQuantity());
+                    if (canPurchase) {
+                        iterator.remove();
+                        System.out.println(Thread.currentThread().getName() + " removed " + item.getName() + " from shopping list");
+                    } else {
+                        System.out.println(Thread.currentThread().getName() + " no stocks available for " + item.getName());
+                        if (!store.getRestockNeedProducts().contains(product)) {
+                            store.getRestockNeedProducts().add(product);
+                            System.out.println(Thread.currentThread().getName() + " added " + item.getName() + " to the needsRestocks queue");
+                            System.out.println(Thread.currentThread().getName() + " Admins have to restock " + product.getName());
+                        } else {
+                            System.out.println(Thread.currentThread().getName() + " " + product.getName() + " is already in the queue. come back when restocked");
+                        }
+                    }
+                } else {
+                    System.out.println(item.getName() + " is not available.");
+                }
+                System.out.println(Thread.currentThread().getName() + " has left " + shoppingList.stream().map(ShoppingItem::getName).collect(Collectors.joining(", ")) + " to buy.");
             }
-
         }
-        // Simulate delay between purchases
 
-
-        //one customer one cart
-        //that mean cart is not shared
-
-        //but when stuff are bought Store is shared and the product
-        //Store has products
-        //There are chatgpt.Product objects in the Store. chatgpt.Product has quantity. purchased, filled
-        //when customer buy product filled and purchased should be synchronized
-        //What about the Store should be shared but not synchronized
-        //If the same chatgpt.Product object used it would block all the customers
-        //only the same product should be blocked not other products
     }
 }
