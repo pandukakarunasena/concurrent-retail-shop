@@ -1,8 +1,9 @@
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Product implements Buyable{
+public class Product {
 
     private String name;
     private float price;
@@ -46,70 +47,43 @@ public class Product implements Buyable{
 
     public boolean canPurchase(int requiredQuantity) {
 
-        return true;
-    }
-    @Override
-    public void restock(int quantity) {
-
-        //this should be synchronized
         lock.lock();
         try {
-            while (this.quantity > 0) {
-                // Wait until the stock is empty
-                try {
-                    System.out.println(Thread.currentThread().getName() +" no need to restock");
-                    stockFinish.await();
-                    System.out.println(Thread.currentThread().getName() +" notification received to restock");
-                    System.out.println(Thread.currentThread().getName() +" state: " + Thread.currentThread().getState());
-
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
+            if ( this.quantity - requiredQuantity >= 0) {
+                System.out.println(Thread.currentThread().getName() + " stocks available for " + this.getName());
+                this.quantity -= requiredQuantity;
+                System.out.println(Thread.currentThread().getName() + " purchased " + requiredQuantity + " " + this.getName());
+                return true;
+            } else {
+                return false;
             }
-
-            // Stock is empty, admin restocks the product
-            this.quantity += quantity;
-            System.out.println(Thread.currentThread().getName() + " restocked the product. total : " + this.getQuantity());
-
-            // Signal customers that the product is available
-            stockAvailable.signalAll();
-
         } finally {
             lock.unlock();
         }
     }
-    @Override
-    public void purchase(int quantity) {
 
-        //this should be synchronized
+    //pub sub restock methods ===========================================
+//    public void restock(int restockingQuantity) {
+//
+//        lock.lock();
+//        System.out.println(Thread.currentThread().getName() + " restocking" + this.getName());
+//        try {
+//            this.quantity += restockingQuantity;
+//            System.out.println(Thread.currentThread().getName() + " restocked the " + this.getName() + ". total : " + this.getQuantity());
+//        } finally {
+//            lock.unlock();
+//        }
+//    }
+
+    public void restock(int restockingQuantity, ConcurrentLinkedDeque<Product> needRestocksProducts) {
+
         lock.lock();
+        System.out.println(Thread.currentThread().getName() + " restocking" + this.getName());
         try {
-            while (this.quantity - quantity <= 0) {
-                // Wait until the stock is available
-                try {
-                    //notify the admin to restock.....
-                    System.out.println(Thread.currentThread().getName() +" notifying admins to restock " + this.getName());
-                    stockFinish.signalAll();
-                    System.out.println(Thread.currentThread().getName() +" notified admins to restock " + this.getName());
-                    stockAvailable.await();
-                    System.out.println(Thread.currentThread().getName() +" restocked " + this.getName() + " new quantity : " + this.getQuantity());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
-
-            //Product is available, customer makes a purchase
-
-            this.quantity -= quantity;
-            System.out.println(Thread.currentThread().getName() + " purchased " + quantity + " " + this.getName());
-
-            // Notify admins to restock if the stock is empty
-//            if (this.quantity - quantity <= 0) {
-//                System.out.println("notify the admins");
-//                stockAvailable.signalAll();
-//            }
+            this.quantity += restockingQuantity;
+            System.out.println(Thread.currentThread().getName() + " restocked the " + this.getName() + ". total : " + this.getQuantity());
+            needRestocksProducts.remove(this);
+            System.out.println(Thread.currentThread().getName() + " removed  " + this.getName() + " from need to be stocked" );
         } finally {
             lock.unlock();
         }
