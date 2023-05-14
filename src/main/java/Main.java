@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
 
@@ -5,57 +8,62 @@ public class Main {
         //Prepare the Store by adding random Products.
         Store store = generateStore();
 
-        //Add System.in for user inputs
-        //user inputs => number of customers, number of admins, number of purchases per customer
-        int numberOfCustomers = 5;
+        int numberOfCustomers = 10;
         int numberOfAdmins = 2;
-        //each customer and admin should be spawned in a new thread
-        //random shopping list
 
-
-        //Customer class with Runnable to buy products
-        //SystemAdmin class with Runnable to update the quantity
-
+        // Create and start admin threads
+        SystemAdmin[] admins = new SystemAdmin[numberOfAdmins];
+        Thread[] adminThreads = new Thread[numberOfAdmins];
         for (int i = 0; i < numberOfAdmins; i++) {
-            Thread systemAdminThread = new Thread( new SystemAdmin(store),"system admin thread " + i);
-            systemAdminThread.start();
+            admins[i] = new SystemAdmin(store);
+            adminThreads[i] = new Thread(admins[i], "admin thread " + i);
+            adminThreads[i].start();
         }
 
-        try {
-            // Sleep for 5 seconds
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            // Handle the interruption if needed
-        }
-
+        // Create and start customer threads
+        Thread[] customerThreads = new Thread[numberOfCustomers];
         for (int i = 0; i < numberOfCustomers; i++) {
             Cart cart = new Cart();
-            Thread customerThread = new Thread( new Customer(cart, store),"customer thread " + i);
-            customerThread.start();
+            List<ShoppingItem> shoppingList = new ArrayList();
+            shoppingList.add(new ShoppingItem("apple", 1));
+            shoppingList.add(new ShoppingItem("banana", 1));
+            customerThreads[i] = new Thread(new Customer(cart, store, shoppingList), "customer thread " + i);
+            customerThreads[i].start();
         }
 
-        try {
-            // Sleep for 5 seconds
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            // Handle the interruption if needed
+        // Wait for customer threads to complete
+        for (int i = 0; i < numberOfCustomers; i++) {
+            try {
+                customerThreads[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
-        System.out.println("apples left " + store.getProduct("apple").getQuantity());
-//        System.out.println("banana left " + store.getProduct("banana").getQuantity());
+        // Stop admin threads
+        for (int i = 0; i < numberOfAdmins; i++) {
+            admins[i].stop();
+            adminThreads[i].interrupt();
+        }
+
+        System.out.println("Summary of the inventory=========================================");
+        for (Product product : store.getProducts().values()) {
+            System.out.println(product.getName() + " left " + store.getProduct(product.getName()).getQuantity());
+        }
+
     }
 
     public static Store generateStore() {
 
         Store store = new Store();
 
-//        Soap soap = new Soap("soap", 55, 100);
-//        store.addProduct(soap);
-//
-//        Banana banana = new Banana("banana", 20, 20);
-//        store.addProduct(banana);
+        Soap soap = new Soap("soap", 55, 100);
+        store.addProduct(soap);
 
-        Apple apple = new Apple("apple", 30, 15);
+        Banana banana = new Banana("banana", 20, 1);
+        store.addProduct(banana);
+
+        Apple apple = new Apple("apple", 30, 1);
         store.addProduct(apple);
 
         return store;
