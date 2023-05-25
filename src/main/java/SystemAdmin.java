@@ -19,20 +19,16 @@ public class SystemAdmin implements Runnable{
         //add products to a queue that needs to be refilled if products are in the queue refill it.
         ConcurrentLinkedQueue<Product> restockNeedProducts = store.getRestockNeedProducts();
         while(!stopFlag) {
-            System.out.println(Thread.currentThread().getName() + " checking if any restocks are needed " + String.join(" ", restockNeedProducts.stream().map(Object::toString).collect(Collectors.joining(", "))));
+            //System.out.println(Thread.currentThread().getName() + " checking if any restocks are needed " +
+            //        String.join(" ", restockNeedProducts.stream().map(Object::toString).collect(Collectors.joining(", "))));
 
-            synchronized (restockNeedProducts) {
-                while (!restockNeedProducts.isEmpty()) {
-                    System.out.println(Thread.currentThread().getName() + " restocks needed for " + String.join(" ", restockNeedProducts.stream().map(Object::toString).toArray(String[]::new)));
-                    for (Product product: restockNeedProducts) {
-                        product.restock(1);
-                        restockNeedProducts.remove(product);
-                    }
-                }
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+            while (!restockNeedProducts.isEmpty()) {
+                System.out.println(Thread.currentThread().getName() + " restocks needed for " +
+                        String.join(" ", restockNeedProducts.stream().map(Object::toString).toArray(String[]::new)));
+
+                Product product = restockNeedProducts.poll();
+                if ( product != null ) {
+                    product.restock(100);
                 }
             }
         }
