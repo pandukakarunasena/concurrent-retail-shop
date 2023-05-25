@@ -1,3 +1,5 @@
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -17,7 +19,6 @@ public class Product {
         this.price = price;
         this.quantity = quantity;
         lock = new ReentrantLock(true);
-        stocks = lock.newCondition();
     }
 
     public String getName() {
@@ -48,7 +49,7 @@ public class Product {
         lock.lock();
         try {
             if ( this.quantity - requiredQuantity >= 0) {
-                System.out.println(Thread.currentThread().getName() + " stocks available for " + this.getName());
+                System.out.println(Thread.currentThread().getName() + " stocks available for add to cart " + this.getName());
                 return true;
             } else {
                 return false;
@@ -63,7 +64,7 @@ public class Product {
         lock.lock();
         try {
             if ( this.quantity - requiredQuantity >= 0 ) {
-                System.out.println(Thread.currentThread().getName() + " stocks available for " + this.getName());
+                System.out.println(Thread.currentThread().getName() + " stocks available for checkout " + this.getName());
                 this.quantity -= requiredQuantity;
                 System.out.println(Thread.currentThread().getName() + " purchased " + requiredQuantity + " " + this.getName());
                 return true;
@@ -82,7 +83,6 @@ public class Product {
         try {
             this.quantity += restockingQuantity;
             System.out.println(Thread.currentThread().getName() + " restocked the " + this.getName() + ". total : " + this.getQuantity());
-            System.out.println(Thread.currentThread().getName() + " removed  " + this.getName() + " from need to be stocked" );
         } finally {
             lock.unlock();
         }
