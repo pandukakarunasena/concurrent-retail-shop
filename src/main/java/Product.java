@@ -1,4 +1,3 @@
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -10,16 +9,15 @@ public class Product {
     private int quantity;
 
     private Lock lock;
-    private Condition stockAvailable;
-    private Condition stockFinish;
+    private Condition stocks;
+
     public Product(String name, float price, int quantity) {
 
         this.name = name;
         this.price = price;
         this.quantity = quantity;
         lock = new ReentrantLock(true);
-        stockAvailable = lock.newCondition();
-        stockFinish = lock.newCondition();
+        stocks = lock.newCondition();
     }
 
     public String getName() {
@@ -51,6 +49,21 @@ public class Product {
         try {
             if ( this.quantity - requiredQuantity >= 0) {
                 System.out.println(Thread.currentThread().getName() + " stocks available for " + this.getName());
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public boolean purchase(int requiredQuantity) {
+
+        lock.lock();
+        try {
+            if ( this.quantity - requiredQuantity >= 0 ) {
+                System.out.println(Thread.currentThread().getName() + " stocks available for " + this.getName());
                 this.quantity -= requiredQuantity;
                 System.out.println(Thread.currentThread().getName() + " purchased " + requiredQuantity + " " + this.getName());
                 return true;
@@ -62,27 +75,13 @@ public class Product {
         }
     }
 
-    //pub sub restock methods ===========================================
-//    public void restock(int restockingQuantity) {
-//
-//        lock.lock();
-//        System.out.println(Thread.currentThread().getName() + " restocking" + this.getName());
-//        try {
-//            this.quantity += restockingQuantity;
-//            System.out.println(Thread.currentThread().getName() + " restocked the " + this.getName() + ". total : " + this.getQuantity());
-//        } finally {
-//            lock.unlock();
-//        }
-//    }
-
-    public void restock(int restockingQuantity, ConcurrentLinkedDeque<Product> needRestocksProducts) {
+    public void restock(int restockingQuantity) {
 
         lock.lock();
         System.out.println(Thread.currentThread().getName() + " restocking" + this.getName());
         try {
             this.quantity += restockingQuantity;
             System.out.println(Thread.currentThread().getName() + " restocked the " + this.getName() + ". total : " + this.getQuantity());
-            needRestocksProducts.remove(this);
             System.out.println(Thread.currentThread().getName() + " removed  " + this.getName() + " from need to be stocked" );
         } finally {
             lock.unlock();
