@@ -1,5 +1,5 @@
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
@@ -7,25 +7,26 @@ import java.util.concurrent.locks.Condition;
 public class Store {
 
     private HashMap<String, Product> products = new HashMap<>();
-    private ConcurrentLinkedDeque<Product> restockNeedProducts = new ConcurrentLinkedDeque<>();
+    private ConcurrentLinkedQueue<Product> restockNeedProducts = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<Cart> carts  = new ConcurrentLinkedQueue<>();
     private Lock lock = new ReentrantLock();
     private Condition notEmpty = lock.newCondition();
 
     public HashMap<String, Product> getProducts() { return products; }
     public void addProduct(Product product) {
-
-        //add new products to the store
         products.put(product.getName(), product);
     }
 
     public Product getProduct(String productName) {
-
         return products.get(productName);
     }
 
-    public ConcurrentLinkedDeque<Product> getRestockNeedProducts() {
-
+    public ConcurrentLinkedQueue<Product> getRestockNeedProducts() {
         return restockNeedProducts;
+    }
+
+    public ConcurrentLinkedQueue getCheckoutQueue() {
+        return carts;
     }
 
     public void addProductsToRestockList(Product product) {
@@ -33,7 +34,6 @@ public class Store {
         lock.lock();
         try {
             restockNeedProducts.add(product);
-            notEmpty.signalAll();
         } finally {
              lock.unlock();
         }
