@@ -3,20 +3,20 @@ import java.util.List;
 
 public class Cart {
 
-    private List<ShoppingItem> addedProducts = new ArrayList<>();
+    private List<ShoppingItem> addedShoppingItems = new ArrayList<>();
 
-    public List getAddedProducts() {
+    public List<ShoppingItem> getAddedShoppingItems() {
 
-        return this.addedProducts;
+        return this.addedShoppingItems;
     }
 
-    public boolean addProduct(ShoppingItem product) {
+    public boolean addShoppingItem(ShoppingItem product) {
 
-        return addedProducts.add(product);
+        return addedShoppingItems.add(product);
     }
 
-    public boolean removeProduct(ShoppingItem product) {
+    public boolean removeShoppingItem(ShoppingItem product) {
 
-        return addedProducts.remove(product);
+        return addedShoppingItems.remove(product);
     }
 }
