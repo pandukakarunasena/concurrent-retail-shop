@@ -9,7 +9,7 @@ public class Main {
         Store store = generateStore();
 
         int numberOfCustomers = 10;
-        int numberOfAdmins = 2;
+        int numberOfAdmins = 5;
 
         // Create and start admin threads
         SystemAdmin[] admins = new SystemAdmin[numberOfAdmins];
@@ -27,9 +27,13 @@ public class Main {
             List<ShoppingItem> shoppingList = new ArrayList();
             shoppingList.add(new ShoppingItem("apple", 1));
             shoppingList.add(new ShoppingItem("banana", 1));
-            customerThreads[i] = new Thread(new Customer(cart, store, shoppingList), "customer thread " + i);
+            customerThreads[i] = new Thread(new Customer(store, shoppingList), "customer thread " + i);
             customerThreads[i].start();
         }
+
+        Cashier cashier = new Cashier(store);
+        Thread cashierThread1 = new Thread(cashier, "cashier thread 0");
+        cashierThread1.start();
 
         // Wait for customer threads to complete
         for (int i = 0; i < numberOfCustomers; i++) {
@@ -39,6 +43,9 @@ public class Main {
                 e.printStackTrace();
             }
         }
+
+        cashier.stop();
+        cashierThread1.interrupt();
 
         // Stop admin threads
         for (int i = 0; i < numberOfAdmins; i++) {
@@ -50,7 +57,6 @@ public class Main {
         for (Product product : store.getProducts().values()) {
             System.out.println(product.getName() + " left " + store.getProduct(product.getName()).getQuantity());
         }
-
     }
 
     public static Store generateStore() {
