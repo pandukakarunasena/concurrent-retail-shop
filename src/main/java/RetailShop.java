@@ -10,6 +10,7 @@ public class RetailShop {
     //3. Customers can have a shopping list for each, but here it is hard coded.
     //4. Introduced cashier threads to check out the customer's carts in first come, a first served basis.
     //5. Introduced a countDownLatch in order to track checking out.
+    // Checking out and restocking hold when no customer is in the store.
     //6. Terminal logs might not be in the correct order.
     //7. Parameter values, flows are aligned with the real world retail shop good purchasing scenarios.
 
@@ -50,10 +51,10 @@ public class RetailShop {
 
     public static void main(String[] args) throws InterruptedException {
 
-        int numberOfCustomers = 10;
-        int numberOfAdmins = 2;
+        int numberOfCustomers = 500;
+        int numberOfAdmins = 5;
         int numberOfCashiers = 5;
-        int scheduledRestockTime = 500;
+        int scheduledRestockTime = 200;
         CountDownLatch latch = new CountDownLatch(numberOfCustomers);
         Store store = new Store();
 
