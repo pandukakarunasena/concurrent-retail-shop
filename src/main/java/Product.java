@@ -1,5 +1,3 @@
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -12,13 +10,16 @@ public class Product {
 
     private Lock lock;
     private Condition stocks;
+    private final int MAX_QUANTITY;
 
-    public Product(String name, float price, int quantity) {
+    public Product(String name, float price, int maxQuantity) {
 
         this.name = name;
         this.price = price;
-        this.quantity = quantity;
+        MAX_QUANTITY = maxQuantity;
+        quantity = maxQuantity;
         lock = new ReentrantLock(true);
+        stocks = lock.newCondition();
     }
 
     public String getName() {
@@ -44,47 +45,61 @@ public class Product {
         this.quantity = quantity;
     }
 
-    public boolean canPurchase(int requiredQuantity) {
+    public boolean addToCart(int requiredQuantity) {
 
         lock.lock();
         try {
-            if ( this.quantity - requiredQuantity >= 0) {
-                System.out.println(Thread.currentThread().getName() + " stocks available for add to cart " + this.getName());
-                return true;
-            } else {
+            if ( this.quantity < requiredQuantity) {
+                System.out.println(Thread.currentThread().getName() + " current stock of the product : "
+                        + this.getQuantity());
                 return false;
+            }
+            System.out.println(Thread.currentThread().getName() + " stocks available for add to cart "
+                    + this.getName());
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void purchase(int requiredQuantity) {
+
+        lock.lock();
+        try {
+            while ( this.quantity < requiredQuantity ) {
+                stocks.await();
+            }
+            System.out.println(Thread.currentThread().getName() + " stocks available for checkout "
+                    + this.getName());
+
+            this.quantity -= requiredQuantity;
+
+            System.out.println(Thread.currentThread().getName() + " purchased " + requiredQuantity + " "
+                    + this.getName());
+
+        } catch (InterruptedException ex) {
+            System.out.println("Error occurred while purchasing the product " + ex);
+        }  finally {
+            lock.unlock();
+        }
+    }
+
+    public void restock() {
+
+        lock.lock();
+        try {
+             if ( this.quantity < MAX_QUANTITY) {
+                this.quantity = MAX_QUANTITY;
+                System.out.println(Thread.currentThread().getName() + " restocked " + this.getName()
+                        + ". total : " + this.getQuantity());
+                stocks.signalAll();
             }
         } finally {
             lock.unlock();
         }
     }
 
-    public boolean purchase(int requiredQuantity) {
-
-        lock.lock();
-        try {
-            if ( this.quantity - requiredQuantity >= 0 ) {
-                System.out.println(Thread.currentThread().getName() + " stocks available for checkout " + this.getName());
-                this.quantity -= requiredQuantity;
-                System.out.println(Thread.currentThread().getName() + " purchased " + requiredQuantity + " " + this.getName());
-                return true;
-            } else {
-                return false;
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public void restock(int restockingQuantity) {
-
-        lock.lock();
-        System.out.println(Thread.currentThread().getName() + " restocking" + this.getName());
-        try {
-            this.quantity += restockingQuantity;
-            System.out.println(Thread.currentThread().getName() + " restocked the " + this.getName() + ". total : " + this.getQuantity());
-        } finally {
-            lock.unlock();
-        }
+    public int getMAX_QUANTITY() {
+        return MAX_QUANTITY;
     }
 }
