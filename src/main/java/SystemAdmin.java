@@ -1,34 +1,36 @@
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
+import java.util.concurrent.CountDownLatch;
 
 public class SystemAdmin implements Runnable{
 
     private Store store;
-    private volatile boolean stopFlag;
+    private int restockTime;
+    private boolean stopFlag;
 
-    public SystemAdmin(Store store) {
+    public SystemAdmin(Store store, int restockTime) {
+
         this.store = store;
+        this.restockTime = restockTime;
     }
 
     public void stop() {
         stopFlag = true;
     }
+
     @Override
     public void run() {
 
-        //add products to a queue that needs to be refilled if products are in the queue refill it.
-        ConcurrentLinkedQueue<Product> restockNeedProducts = store.getRestockNeedProducts();
-        while(!stopFlag) {
-            //System.out.println(Thread.currentThread().getName() + " checking if any restocks are needed " +
-            //        String.join(" ", restockNeedProducts.stream().map(Object::toString).collect(Collectors.joining(", "))));
+        //restock products in an interval of restockTime (ms) to signify a stock have arrived and restock the product.
 
-            while (!restockNeedProducts.isEmpty()) {
-                System.out.println(Thread.currentThread().getName() + " restocks needed for " +
-                        String.join(" ", restockNeedProducts.stream().map(Object::toString).toArray(String[]::new)));
+        while (!stopFlag) {
+            try {
+                Thread.sleep(restockTime);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
 
-                Product product = restockNeedProducts.poll();
-                if ( product != null ) {
-                    product.restock(100);
+            synchronized (store.getProducts()) {
+                for (Product product : store.getProducts().values()) {
+                    product.restock();
                 }
             }
         }
