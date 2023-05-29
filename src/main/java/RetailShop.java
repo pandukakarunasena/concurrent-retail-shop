@@ -11,6 +11,7 @@ public class RetailShop {
     //4. Introduced cashier threads to check out the customer's carts in first come, a first served basis.
     //5. Introduced a countDownLatch in order to track checking out.
     //6. Terminal logs might not be in the correct order.
+    //7. Parameter values, flows are aligned with the real world retail shop good purchasing scenarios.
 
     //   FUTURE IMPROVEMENTS
     //1. Get user inputs for the retail shop parameters.
