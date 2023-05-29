@@ -1,7 +1,4 @@
 public class Banana extends Product {
 
-    public Banana(String name, float price, int quantity) {
-
-        super(name, price, quantity);
-    }
+    public Banana(String name, float price, int maxQuantity) {super(name, price, maxQuantity);}
 }
