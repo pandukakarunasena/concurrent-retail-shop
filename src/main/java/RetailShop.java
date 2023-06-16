@@ -51,9 +51,9 @@ public class RetailShop {
 
     public static void main(String[] args) throws InterruptedException {
 
-        int numberOfCustomers = 500;
-        int numberOfAdmins = 5;
-        int numberOfCashiers = 5;
+        int numberOfCustomers = 10;
+        int numberOfAdmins = 2;
+        int numberOfCashiers = 1;
         int scheduledRestockTime = 200;
         CountDownLatch latch = new CountDownLatch(numberOfCustomers);
         Store store = new Store();
@@ -75,13 +75,13 @@ public class RetailShop {
 
     private void  generateStore() {
 
-        Soap soap = new Soap("soap", 55, 1);
+        Product soap = new Product("soap", 55, 1);
         store.addProductToStore(soap);
 
-        Banana banana = new Banana("banana", 20, 1);
+        Product banana = new Product("banana", 20, 1);
         store.addProductToStore(banana);
 
-        Apple apple = new Apple("apple", 30, 1);
+        Product apple = new Product("apple", 30, 1);
         store.addProductToStore(apple);
     }
 
